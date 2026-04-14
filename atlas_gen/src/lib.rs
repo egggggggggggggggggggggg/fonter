@@ -8,9 +8,9 @@ pub mod edge_coloring;
 pub mod edge_select;
 pub mod shape_distance_finder;
 use atlas::*;
-use font_parser::TtfFont;
 use image::{ImageBuffer, Rgb};
 use math::lalg::Vec2;
+use parser::TtfFont;
 
 use crate::allocator::ShelfAllocator;
 use crate::cont_comb::SimpleContourCombiner;

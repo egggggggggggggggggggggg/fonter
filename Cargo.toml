@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "atlas_gen",
+    "parser",
+    "math", "fonter", 
+]
