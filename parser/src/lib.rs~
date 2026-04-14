@@ -1,1 +1,5 @@
-pub mod cursor;
+mod cursor;
+pub mod error;
+pub mod table;
+pub mod ttf_parse;
+use ttf_parse::*;

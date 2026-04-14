@@ -14,10 +14,3 @@ version = "0.1.0"
 dependencies = [
  "bitflags",
 ]
-
-[[package]]
-name = "parser"
-version = "0.1.0"
-dependencies = [
- "math",
-]
