@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use std::path::Path;
 use std::sync::Arc;
 
 use crate::cursor::Cursor;
@@ -60,7 +61,10 @@ impl CellMetrics {
     }
 }
 impl TtfFont {
-    pub fn new(path: &str) -> Result<Self, Error> {
+    pub fn new<P>(path: P) -> Result<Self, Error>
+    where
+        P: AsRef<Path>,
+    {
         let mut data = match read_file(path) {
             Ok(data) => data,
             Err(e) => return Err(Error::Io(e)),
@@ -179,7 +183,10 @@ impl TtfFont {
         }
     }
 }
-fn read_file(path: &str) -> std::io::Result<Vec<u8>> {
+fn read_file<P>(path: P) -> std::io::Result<Vec<u8>>
+where
+    P: AsRef<Path>,
+{
     let mut data = Vec::new();
     File::open(path)?.read_to_end(&mut data)?;
     Ok(data)
