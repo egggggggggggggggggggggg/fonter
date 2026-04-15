@@ -196,6 +196,10 @@ checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 [[package]]
 name = "core"
 version = "0.1.0"
+dependencies = [
+ "atlas_gen",
+ "parser",
+]
 
 [[package]]
 name = "crc32fast"
@@ -321,14 +325,6 @@ checksum = "843fba2746e448b37e26a819579957415c8cef339bf08564fe8b7ddbd959573c"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
-]
-
-[[package]]
-name = "fonter"
-version = "0.1.0"
-dependencies = [
- "atlas_gen",
- "parser",
 ]
 
 [[package]]

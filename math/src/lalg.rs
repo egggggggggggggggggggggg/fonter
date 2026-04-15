@@ -144,6 +144,14 @@ impl Mul<Vec2> for f64 {
     }
     type Output = Vec2;
 }
+impl From<(f64, f64)> for Vec2 {
+    fn from(value: (f64, f64)) -> Self {
+        Self {
+            x: value.0,
+            y: value.1,
+        }
+    }
+}
 impl Eq for Vec2 {}
 impl PartialEq for Vec2 {
     fn eq(&self, other: &Self) -> bool {

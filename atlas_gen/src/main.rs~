@@ -3,9 +3,9 @@ use atlas_gen::{
     edge_coloring::edge_coloring_simple, edge_select::MultiDistanceSelector,
     shape_distance_finder::ShapeDistanceFinder,
 };
-use font_parser::TtfFont;
 use image::{ImageBuffer, Rgb};
 use math::lalg::Vec2;
+use parser::TtfFont;
 
 fn main() {
     entry();

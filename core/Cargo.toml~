@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 atlas_gen = {path = "../atlas_gen "}
+parser = { path = "../parser"}

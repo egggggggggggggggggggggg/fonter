@@ -20,7 +20,20 @@ impl AtlasEntry {
         ([u0, v0], [u1, v1])
     }
 }
+/// A single texture waiting to be committed to the atlas.
+struct PendingImage<T, P: Pixel<Subpixel = u8>> {
+    key: T,
+    image: ImageBuffer<P, Vec<u8>>,
+}
 
+/// Result of a flush operation.
+pub struct FlushResult<T> {
+    /// Keys that were successfully packed and written into the atlas.
+    pub committed: Vec<T>,
+    /// Keys whose images could not be placed (atlas full or image too large).
+    /// They have been discarded and must be re-staged if still needed.
+    pub failed: Vec<T>,
+}
 //evictable atlas cache
 pub struct Atlas<T, P, A>
 where
@@ -35,6 +48,7 @@ where
     width: u32,
     height: u32,
     padding: u32,
+    pending: Vec<PendingImage<T, P>>,
 }
 
 impl<T, P, A> Atlas<T, P, A>
@@ -52,6 +66,7 @@ where
             width,
             height,
             padding,
+            pending: Vec::new(),
         }
     }
     pub fn add_image(&mut self, key: T, src: &ImageBuffer<P, Vec<u8>>) -> Result<(), &'static str> {
@@ -79,6 +94,40 @@ where
         self.uv_table
             .insert(key, atlas_entry.uv(self.width, self.height));
         Ok(())
+    }
+    pub fn stage(&mut self, key: T, image: ImageBuffer<P, Vec<u8>>) {
+        if !self.table.contains_key(&key) {
+            self.pending.push(PendingImage { key, image });
+        }
+    }
+    #[inline]
+    pub fn contains(&self, key: &T) -> bool {
+        self.table.contains_key(key)
+    }
+    #[inline]
+    pub fn pending_count(&self) -> usize {
+        self.pending.len()
+    }
+    pub fn flush(&mut self) -> FlushResult<T> {
+        let mut pending = std::mem::take(&mut self.pending);
+        pending.sort_unstable_by(|a, b| {
+            let (aw, ah) = a.image.dimensions();
+            let (bw, bh) = b.image.dimensions();
+            let a_long = aw.max(ah);
+            let b_long = bw.max(bh);
+            b_long.cmp(&a_long).then_with(|| (bw * bh).cmp(&(aw * ah)))
+        });
+        let mut result = FlushResult {
+            committed: Vec::with_capacity(pending.len()),
+            failed: Vec::new(),
+        };
+        for PendingImage { key, image } in pending {
+            match self.add_image(key, &image) {
+                Ok(()) => result.committed.push(key),
+                Err(_) => result.failed.push(key),
+            }
+        }
+        result
     }
     pub fn get_uv(&mut self, key: T) -> ([f32; 2], [f32; 2]) {
         if let Some(uv) = self.uv_table.get(&key) {
