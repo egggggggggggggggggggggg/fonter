@@ -20,12 +20,6 @@ pub use shape_distance_finder::*;
 use crate::cont_comb::SimpleContourCombiner;
 use crate::edge_coloring::edge_coloring_simple;
 const CROSS_THRESHOLD: f64 = 3.0;
-#[derive(Default)]
-pub enum GeneratorType {
-    SDF,
-    #[default]
-    MSDF,
-}
 
 ///Example code for generating a texture atlas.
 pub fn entry() -> Atlas<char, Rgb<u8>, ShelfAllocator> {

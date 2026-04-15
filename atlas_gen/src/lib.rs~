@@ -20,12 +20,6 @@ pub use shape_distance_finder::*;
 use crate::cont_comb::SimpleContourCombiner;
 use crate::edge_coloring::edge_coloring_simple;
 const CROSS_THRESHOLD: f64 = 3.0;
-#[derive(Default)]
-pub enum GeneratorType {
-    SDF,
-    #[default]
-    MSDF,
-}
 
 ///Example code for generating a texture atlas.
 pub fn entry() -> Atlas<char, Rgb<u8>, ShelfAllocator> {
@@ -72,8 +66,7 @@ pub fn entry() -> Atlas<char, Rgb<u8>, ShelfAllocator> {
     texture_atlas.image.save("../texture_atlassss.png").unwrap();
     texture_atlas
 }
-///Single use MSDF Atlas Generator. Takes a set of glyphs and a font as an argument
-///The caller of this must first load the font and pass it in.
+///Single use.
 pub fn oneshot(
     glyphs: &[char],
     font: &mut TtfFont,
