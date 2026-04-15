@@ -144,8 +144,8 @@ impl Mul<Vec2> for f64 {
     }
     type Output = Vec2;
 }
-impl From<(i32, i32)> for Vec2 {
-    fn from(value: (i32, i32)) -> Self {
+impl From<(f64, f64)> for Vec2 {
+    fn from(value: (f64, f64)) -> Self {
         Self {
             x: value.0,
             y: value.1,
