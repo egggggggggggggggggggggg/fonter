@@ -1,6 +1,0 @@
-pub mod arit;
-pub mod bezier;
-pub mod calc;
-pub mod contour;
-pub mod lalg;
-pub mod shape;
