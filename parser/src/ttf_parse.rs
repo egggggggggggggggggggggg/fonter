@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use crate::cursor::Cursor;
 use crate::error::{Error, ReadError};
+use crate::gsub::Gsub;
 pub use crate::table::*;
 use math::bezier::Bounds;
 use math::contour::Contour;
@@ -12,6 +13,8 @@ use math::lalg::{Transform, transform_curve};
 use math::shape::Shape;
 use std::fs::File;
 use std::io::Read;
+///Holds tables required for bare minimum text rendering.
+///Optional tables are returned instead of being stored within the struct.
 #[derive(Debug, Clone)]
 pub struct TtfFont {
     data: Vec<u8>,
@@ -97,7 +100,9 @@ impl TtfFont {
             post,
         })
     }
-    pub fn parse_required() {}
+    pub fn parse_gsub(&mut self) -> Result<Gsub, Error> {
+        Gsub::parse(&self.data, &self.tables)
+    }
     pub fn parse_gid(&mut self, gid: GlyphId) -> Result<Option<&Arc<Glyph>>, Error> {
         let mut cursor = Cursor::set(&self.data, 0);
         self.glyf.parse_glyf_block(gid, &mut cursor)?;

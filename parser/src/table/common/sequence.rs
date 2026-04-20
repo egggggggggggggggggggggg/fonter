@@ -1,4 +1,4 @@
-use crate::{cursor::Cursor, error::Error, gsub::AlternateSubstitution};
+use crate::{cursor::Cursor, error::Error};
 
 pub struct SequenceLookup {
     sequence_index: u16,
