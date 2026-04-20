@@ -1,5 +1,6 @@
 //Required Tables
 pub mod cmap;
+pub mod common;
 pub mod glyf;
 pub mod head;
 pub mod hhea;
