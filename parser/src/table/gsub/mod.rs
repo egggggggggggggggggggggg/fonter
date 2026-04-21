@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use crate::{
     TableRecord,
-    common::lookup::{self, Lookup, LookupList},
+    common::{
+        features::FeatureList, lookup::LookupList, script::ScriptList, variation::FeatureVariations,
+    },
     cursor::Cursor,
     error::Error,
     gsub::{
@@ -37,13 +39,13 @@ impl Substitution {
         let base = cursor.position();
         Ok(match lookup_type {
             1 => Self::Single(SingleSubsitution::parse(cursor, base)?),
-            2 => {}
-            3 => {}
-            4 => {}
-            5 => {}
-            6 => {}
-            7 => {}
-            8 => {}
+            2 => Self::Multiple(MultipleSubsitution::parse(cursor, base)?),
+            3 => Self::Alternate(AlternateSubstitution::parse(cursor, base)?),
+            4 => Self::Ligature(LigatureSubstitution::parse(cursor)?),
+            5 => Self::Contextual(ContextualSubstitution::parse(cursor)?),
+            6 => Self::ChainedContextual(ChainedContextualSubstitution::parse(cursor)?),
+            7 => Self::Extension(ExtensionSubstitution::parse(cursor)?),
+            8 => Self::Reverse(ReverseSubstitution::parse(cursor)?),
             _ => {
                 return Err(Error::Unknown);
             }
@@ -52,6 +54,9 @@ impl Substitution {
 }
 pub struct Gsub {
     lookup_list: LookupList,
+    script_list: ScriptList,
+    feature_list: FeatureList,
+    feature_variation_list: Option<FeatureVariations>,
     loaded_subsitutions: HashMap<&'static [u8; 4], Substitution>,
 }
 impl Gsub {
@@ -70,13 +75,25 @@ impl Gsub {
         };
         cursor.seek(lookup_list_offset as usize)?;
         let lookup_list = LookupList::parse(&mut cursor)?;
-        let sub_allocation = lookup_list.total_sub_tables();
+        cursor.seek(feature_list_offset as usize)?;
+        let feature_list = FeatureList::parse(&mut cursor)?;
+        cursor.seek(script_list_offset as usize)?;
+        let script_list = ScriptList::parse(&mut cursor)?;
+        let feature_variation_list = if let Some(offset) = feature_variation_offset {
+            cursor.seek(offset as usize)?;
+            Some(FeatureVariations::parse(&mut cursor)?)
+        } else {
+            None
+        };
         Ok(Self {
+            feature_variation_list,
+            script_list,
+            feature_list,
             lookup_list,
             loaded_subsitutions: HashMap::new(),
         })
     }
     pub fn parse_script(tag: &[u8; 4]) -> Substitution {
-        Substitution::ChainedContextual(())
+        Substitution::ChainedContextual(ChainedContextualSubstitution {})
     }
 }

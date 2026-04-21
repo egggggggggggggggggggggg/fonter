@@ -17,7 +17,6 @@ impl FeatureList {
         })
     }
 }
-
 pub struct FeatureRecord {
     feature_tag: [u8; 4],
     feature_offset: u16,

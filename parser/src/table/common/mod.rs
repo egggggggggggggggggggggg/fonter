@@ -5,4 +5,5 @@ pub mod lang_sys;
 pub mod lookup;
 pub mod script;
 pub mod sequence;
+pub mod variation;
 use script::*;

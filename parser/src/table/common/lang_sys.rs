@@ -13,6 +13,7 @@ impl LangSysRecord {
         })
     }
 }
+#[derive(Debug, Clone)]
 pub struct LangSys {
     lookup_order_offset: u16,
     required_feature_index: u16,

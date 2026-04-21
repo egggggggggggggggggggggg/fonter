@@ -2,6 +2,7 @@ use crate::{common::coverage::Coverage, cursor::Cursor, error::Error};
 
 #[derive(Debug, Clone)]
 pub struct AlternateSubstitution {
+    pub format: u16,
     pub coverage: Coverage,
     pub alternate_sets: Vec<AlternateSet>, // each glyph → list of alternates
 }
@@ -16,7 +17,7 @@ impl AlternateSubstitution {
         cursor.seek(saved_pos)?;
         let alternate_set_count = cursor.read_u16()?;
         let mut alternate_sets = Vec::with_capacity(alternate_set_count as usize);
-        for idx in 0..alternate_set_count {
+        for _ in 0..alternate_set_count {
             let offset = cursor.read_u16()?;
             let saved = cursor.position();
             cursor.seek(offset as usize + base)?;
@@ -24,6 +25,7 @@ impl AlternateSubstitution {
             cursor.seek(saved)?;
         }
         Ok(Self {
+            format,
             coverage,
             alternate_sets,
         })

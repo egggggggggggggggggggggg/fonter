@@ -18,7 +18,6 @@ impl SingleSubsitution {
         cursor.seek(coverage_offset as usize + base)?;
         let coverage = Coverage::parse(cursor)?;
         cursor.seek(saved_pos)?;
-
         Ok(match format {
             1 => {
                 let delta_glyph_id = cursor.read_u16()?;
