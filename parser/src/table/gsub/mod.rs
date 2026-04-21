@@ -5,7 +5,12 @@ use crate::{
     common::lookup::{self, Lookup, LookupList},
     cursor::Cursor,
     error::Error,
-    gsub::{alternate::AlternateSubstitution, single::SingleSubsitution},
+    gsub::{
+        alternate::AlternateSubstitution, chained::ChainedContextualSubstitution,
+        contextual::ContextualSubstitution, extension::ExtensionSubstitution,
+        ligature::LigatureSubstitution, multiple::MultipleSubsitution,
+        reverse::ReverseSubstitution, single::SingleSubsitution,
+    },
 };
 
 pub mod alternate;
@@ -19,22 +24,22 @@ pub mod single;
 #[derive(Debug, Clone)]
 pub enum Substitution {
     Single(SingleSubsitution),
-    Multiple(MultipleSubstitution),
+    Multiple(MultipleSubsitution),
     Alternate(AlternateSubstitution),
     Ligature(LigatureSubstitution),
     Contextual(ContextualSubstitution),
     ChainedContextual(ChainedContextualSubstitution),
     Extension(ExtensionSubstitution),
-    ReverseChainingContextSingle(ReverseChainingContextSingleSubstitution),
+    Reverse(ReverseSubstitution),
 }
 impl Substitution {
     pub fn parse(cursor: &mut Cursor, lookup_type: u16) -> Result<Self, Error> {
         let base = cursor.position();
         Ok(match lookup_type {
-            1 => Self::Single(SingleSubsitution::parse(cursor, base)?);
-            2 => Self::
+            1 => Self::Single(SingleSubsitution::parse(cursor, base)?),
+            2 => {}
             3 => {}
-           4 => {}
+            4 => {}
             5 => {}
             6 => {}
             7 => {}
@@ -46,8 +51,8 @@ impl Substitution {
     }
 }
 pub struct Gsub {
-    lookup: Lookup,
-    subsitutions: Vec<Substitution>,
+    lookup_list: LookupList,
+    loaded_subsitutions: HashMap<&'static [u8; 4], Substitution>,
 }
 impl Gsub {
     pub fn parse(data: &[u8], tables: &HashMap<[u8; 4], TableRecord>) -> Result<Self, Error> {
@@ -66,15 +71,12 @@ impl Gsub {
         cursor.seek(lookup_list_offset as usize)?;
         let lookup_list = LookupList::parse(&mut cursor)?;
         let sub_allocation = lookup_list.total_sub_tables();
-        let mut subsitutions = Vec::with_capacity(sub_allocation);
-        for lookup in &lookup_list.lookups {
-            for sub_table_offset in lookup.sub_table_offsets{
-                
-            }
-        }
         Ok(Self {
-            lookup,
-            subsitutions,
+            lookup_list,
+            loaded_subsitutions: HashMap::new(),
         })
+    }
+    pub fn parse_script(tag: &[u8; 4]) -> Substitution {
+        Substitution::ChainedContextual(())
     }
 }
