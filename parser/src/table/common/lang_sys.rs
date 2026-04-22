@@ -1,15 +1,18 @@
 use crate::{cursor::Cursor, error::Error};
 pub struct LangSysRecord {
-    lang_sys_tag: [u8; 4],
-    lang_sys_offset: u16,
+    pub lang_sys_tag: [u8; 4],
+    pub lang_sys: LangSys,
 }
 impl LangSysRecord {
-    pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
+    ///Base is the offset of the ScriptTable.
+    pub fn parse(cursor: &mut Cursor, base: usize) -> Result<Self, Error> {
         let lang_sys_tag = cursor.read_u32()?.to_be_bytes();
         let lang_sys_offset = cursor.read_u16()?;
+        cursor.seek(base + lang_sys_offset as usize)?;
+        let lang_sys = LangSys::parse(cursor)?;
         Ok(Self {
             lang_sys_tag,
-            lang_sys_offset,
+            lang_sys,
         })
     }
 }
@@ -17,7 +20,6 @@ impl LangSysRecord {
 pub struct LangSys {
     lookup_order_offset: u16,
     required_feature_index: u16,
-    feature_index_count: u16,
     feature_indices: Vec<u16>,
 }
 impl LangSys {
@@ -33,7 +35,6 @@ impl LangSys {
         Ok(Self {
             lookup_order_offset,
             required_feature_index,
-            feature_index_count,
             feature_indices,
         })
     }

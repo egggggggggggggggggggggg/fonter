@@ -52,16 +52,19 @@ impl Substitution {
         })
     }
 }
-pub struct Gsub {
+pub struct Gsub<'a> {
+    segment: &'a [u8],
     lookup_list: LookupList,
     script_list: ScriptList,
     feature_list: FeatureList,
     feature_variation_list: Option<FeatureVariations>,
     loaded_subsitutions: HashMap<&'static [u8; 4], Substitution>,
 }
-impl Gsub {
-    pub fn parse(data: &[u8], tables: &HashMap<[u8; 4], TableRecord>) -> Result<Self, Error> {
+impl<'a> Gsub<'a> {
+    pub fn parse(data: &'a [u8], tables: &HashMap<[u8; 4], TableRecord>) -> Result<Self, Error> {
         let rec = tables.get(b"GSUB").ok_or(Error::MissingTable("GSUB"))?;
+        let segment =
+            &data[rec.table_offset as usize..rec.table_offset as usize + rec.length as usize];
         let mut cursor = Cursor::set(data, rec.table_offset);
         let major = cursor.read_u16()?;
         let minor = cursor.read_u16()?;
@@ -86,6 +89,7 @@ impl Gsub {
             None
         };
         Ok(Self {
+            segment,
             feature_variation_list,
             script_list,
             feature_list,

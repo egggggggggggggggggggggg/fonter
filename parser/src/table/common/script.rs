@@ -1,9 +1,12 @@
-use std::collections::{HashMap, btree_map::Values};
+use std::collections::HashMap;
 
-use crate::{common::lang_sys::LangSys, cursor::Cursor, error::Error};
-
+use crate::{
+    common::lang_sys::{LangSys, LangSysRecord},
+    cursor::Cursor,
+    error::Error,
+};
+///SriptList parses on demand.
 pub struct ScriptList {
-    script_count: u16,
     script_records: HashMap<[u8; 4], ScriptRecords>,
     ///When the Script is parsed, its cached into a hashMap to avoid reparsing.
     parsed_scripts: HashMap<[u8; 4], Script>,
@@ -11,7 +14,6 @@ pub struct ScriptList {
     ///previous position when needed.  
     base: usize,
 }
-
 impl ScriptList {
     ///Prior to calling this, cursor must be alligned to the offset specified for the table.
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
@@ -23,7 +25,6 @@ impl ScriptList {
             script_records.insert(record.script_tag, record);
         }
         Ok(Self {
-            script_count,
             parsed_scripts: HashMap::new(),
             script_records,
             base,
@@ -32,7 +33,7 @@ impl ScriptList {
     pub fn parse_all(&mut self, cursor: &mut Cursor) -> Result<(), Error> {
         let kvpair: Vec<([u8; 4], ScriptRecords)> = self.script_records.drain().collect();
         for (tag, record) in kvpair {
-            cursor.seek(self.base + record.script_offset as usize);
+            cursor.seek(self.base + record.script_offset as usize)?;
             let res = Script::parse(cursor)?;
             self.parsed_scripts.insert(tag, res);
         }
@@ -68,15 +69,29 @@ impl ScriptRecords {
 }
 #[derive(Clone, Debug)]
 pub struct Script {
-    default_lang_sys: LangSys,
-    lang_sys: Vec<LangSys>,
+    pub default_lang_sys: Option<LangSys>,
+    pub lang_sys: HashMap<[u8; 4], LangSys>,
 }
+
 impl Script {
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
-        Ok(Self {})
+        let base = cursor.position();
+        let default_lang_sys_offset = cursor.read_u16()?;
+        let lang_sys_count = cursor.read_u16()?;
+        let mut lang_sys = HashMap::with_capacity(lang_sys_count as usize);
+        for _ in 0..lang_sys_count {
+            let lang_sys_record = LangSysRecord::parse(cursor, base)?;
+            lang_sys.insert(lang_sys_record.lang_sys_tag, lang_sys_record.lang_sys);
+        }
+        let default_lang_sys = if default_lang_sys_offset == 0 {
+            None
+        } else {
+            cursor.seek(default_lang_sys_offset as usize)?;
+            Some(LangSys::parse(cursor)?)
+        };
+        Ok(Self {
+            default_lang_sys,
+            lang_sys,
+        })
     }
-}
-pub struct LookupList {
-    lookup_count: u16,
-    lookup_offsets: Vec<u16>,
 }
