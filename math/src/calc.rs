@@ -1,4 +1,5 @@
-use std::{f64, ops::Mul};
+use core::f64;
+use std::ops::Mul;
 #[derive(Debug, Copy, Clone)]
 pub enum Degree {
     Constant,
@@ -22,22 +23,11 @@ impl From<u32> for Degree {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct Polynomial {
     pub coefficients: Vec<f64>,
 }
 impl Polynomial {
-    pub fn eval(&self, x: f64) -> f64 {
-        let mut total_value = 0.0;
-        let mut current_degree = self.coefficients.len() - 1;
-        for coefficient in &self.coefficients {
-            let term = x.powi(current_degree as i32);
-            total_value += term * coefficient;
-            current_degree -= 1;
-        }
-        total_value
-    }
     pub fn eval_horner(&self, x: f64) -> f64 {
         self.coefficients.iter().fold(0.0, |acc, &c| acc * x + c)
     }
@@ -48,7 +38,7 @@ impl Polynomial {
             };
         }
         let mut current_degree = self.coefficients.len() - 1;
-        let mut new_coefficients = vec![];
+        let mut new_coefficients = Vec::with_capacity(self.coefficients.len() - 1);
         for i in &self.coefficients {
             if current_degree == 0 {
                 break;
@@ -63,12 +53,10 @@ impl Polynomial {
     pub fn degree(&self) -> Degree {
         Degree::from(self.coefficients.len() as u32)
     }
-    //maybe make this more flexible
-    //options might be
-    //sampling rate
-    //range
+    ///This method assumes the domain of 0.0 - 1.0 because I'm using it for MSDF bezier curve. For
+    ///reuse of this crate, should probably add a method for specifying the domain of roots to be
+    ///found.  
     pub fn find_roots(&self, sample_amount: u32, epsilon: f64) -> Vec<f64> {
-        //this method works on any degree but im using it for cubic solving
         let mut candidate_intervals: Vec<Range> = vec![];
         let mut i = 0;
         let mut roots = vec![0.0, 1.0];
@@ -77,7 +65,7 @@ impl Polynomial {
             let second = self.eval_horner((i + 1) as f64 / sample_amount as f64);
             if (first.abs() < epsilon)
                 || (second.abs() < epsilon)
-                || (first.signum() != second.signum())
+                || (first * second <= 0.0 || first.abs() < epsilon || second.abs() < epsilon)
             {
                 candidate_intervals.push(Range {
                     lower: i as f64 / sample_amount as f64,
@@ -117,26 +105,37 @@ pub struct Range {
 pub fn bisection(f: &Polynomial, initial_guess: Range, epsilon: f64) -> Option<f64> {
     let mut a = initial_guess.lower;
     let mut b = initial_guess.higher;
-    if f.eval_horner(a) * f.eval_horner(b) >= 0.0 {
+    let mut fa = f.eval_horner(a);
+    let fb = f.eval_horner(b);
+    if fa.abs() < epsilon {
+        return Some(a);
+    }
+    if fb.abs() < epsilon {
+        return Some(b);
+    }
+    if fa.signum() == fb.signum() {
         return None;
     }
-    let mut c = a;
-    while (b - a) >= epsilon {
-        c = (a + b) / 2.0;
-        let c_value = f.eval_horner(c);
-        if c_value == 0.0 {
-            break;
-        } else if c_value * f.eval_horner(a) < 0.0 {
+    while (b - a).abs() > epsilon {
+        let c = (a + b) * 0.5;
+        let fc = f.eval_horner(c);
+        if fc.abs() < epsilon {
+            return Some(c);
+        }
+
+        if fa.signum() != fc.signum() {
             b = c;
         } else {
             a = c;
+            fa = fc;
         }
     }
-    Some(c)
+
+    Some((a + b) * 0.5)
 }
 #[inline(always)]
 pub fn clamp(value: f64, min: f64, max: f64) -> f64 {
-    value.min(min).max(max)
+    value.max(min).min(max)
 }
 #[inline(always)]
 pub fn median<T: PartialOrd + Copy>(a: T, b: T, c: T) -> T {
@@ -160,7 +159,7 @@ pub fn median<T: PartialOrd + Copy>(a: T, b: T, c: T) -> T {
 }
 
 pub fn solve_cubic_normed(a: f64, b: f64, c: f64) -> Vec<f64> {
-    let mut a = a.clone();
+    let mut a = a;
     //No with_capacity() as the amount of solution varies and is important info
     let mut solutions = Vec::new();
     let a2 = a * a;
@@ -170,16 +169,7 @@ pub fn solve_cubic_normed(a: f64, b: f64, c: f64) -> Vec<f64> {
     let q3 = q * q * q;
     a *= 1.0 / 3.0;
     if r2 < q3 {
-        let t = {
-            let mut t = r / q3.sqrt();
-            if t < -1.0 {
-                t = -1.0
-            }
-            if t > 1.0 {
-                t = 1.0
-            }
-            t.acos()
-        };
+        let t = (r / q3.sqrt()).clamp(-1.0, 1.0).acos();
         q = -2.0 * q.sqrt();
         solutions.push(q * (1.0 / 3.0 * t).cos() - a);
         solutions.push(q * (1.0 / 3.0 * (t + 2.0 * f64::consts::PI)).cos() - a);
@@ -187,7 +177,7 @@ pub fn solve_cubic_normed(a: f64, b: f64, c: f64) -> Vec<f64> {
     } else {
         let u = {
             let z = if r < 0.0 { 1.0 } else { -1.0 };
-            z * (r.abs() + (r2 - q3).sqrt()).powf(1.0 / 3.0)
+            z * (r.abs() + (r2 - q3).sqrt()).cbrt()
         };
         let v = if u == 0.0 { 0.0 } else { q / u };
         solutions.push((u + v) - a);

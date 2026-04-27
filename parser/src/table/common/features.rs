@@ -1,53 +1,48 @@
-use crate::{cursor::Cursor, error::Error};
+use std::collections::HashMap;
 
+use crate::{cursor::Cursor, error::Error, tags::Tag};
+#[derive(Debug, Clone)]
 pub struct FeatureList {
-    feature_count: u16,
-    feature_records: Vec<FeatureRecord>,
+    pub features: HashMap<Tag, Feature>,
 }
 impl FeatureList {
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
+        let base = cursor.position();
         let feature_count = cursor.read_u16()?;
-        let mut feature_records = Vec::with_capacity(feature_count as usize);
+        let mut features = HashMap::with_capacity(feature_count as usize);
         for _ in 0..feature_count {
-            feature_records.push(FeatureRecord::parse(cursor)?);
+            let feature_tag = Tag::from(cursor.read_u32()?);
+            let feature_offset = cursor.read_u16()?;
+            let saved = cursor.position();
+            let feature_start = feature_offset as usize + base;
+            cursor.seek(feature_start)?;
+            let feature_params_offset = cursor.read_u16()?;
+            let lookup_index_count = cursor.read_u16()?;
+            let mut lookup_list_indices = Vec::with_capacity(lookup_index_count as usize);
+            for _ in 0..lookup_index_count {
+                lookup_list_indices.push(cursor.read_u16()?);
+            }
+            let feature_params = if feature_params_offset == 0 {
+                None
+            } else {
+                cursor.seek(feature_start + feature_params_offset as usize)?;
+                Some(0)
+            };
+            features.insert(
+                feature_tag,
+                Feature {
+                    feature_params,
+                    lookup_list_indices,
+                },
+            );
+            cursor.seek(saved)?;
         }
-        Ok(Self {
-            feature_count,
-            feature_records,
-        })
+        Ok(Self { features })
     }
 }
-pub struct FeatureRecord {
-    feature_tag: [u8; 4],
-    feature_offset: u16,
-}
-impl FeatureRecord {
-    pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
-        let feature_tag = cursor.read_u32()?.to_be_bytes();
-        let feature_offset = cursor.read_u16()?;
-        Ok(Self {
-            feature_tag,
-            feature_offset,
-        })
-    }
-}
+#[derive(Debug, Clone)]
 pub struct Feature {
-    feature_params_offset: u16,
-    lookup_index_count: u16,
-    lookup_list_indices: Vec<u16>,
-}
-impl Feature {
-    pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
-        let feature_params_offset = cursor.read_u16()?;
-        let lookup_index_count = cursor.read_u16()?;
-        let mut lookup_list_indices = Vec::with_capacity(lookup_index_count as usize);
-        for _ in 0..lookup_index_count {
-            lookup_list_indices.push(cursor.read_u16()?);
-        }
-        Ok(Self {
-            feature_params_offset,
-            lookup_index_count,
-            lookup_list_indices,
-        })
-    }
+    ///Placeholder for now. Unsure how to implement this.
+    pub feature_params: Option<i32>,
+    pub lookup_list_indices: Vec<u16>,
 }

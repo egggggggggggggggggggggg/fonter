@@ -54,11 +54,11 @@ impl Substitution {
 }
 pub struct Gsub<'a> {
     segment: &'a [u8],
-    lookup_list: LookupList,
-    script_list: ScriptList,
-    feature_list: FeatureList,
-    feature_variation_list: Option<FeatureVariations>,
-    loaded_subsitutions: HashMap<&'static [u8; 4], Substitution>,
+    pub lookup_list: LookupList,
+    pub script_list: ScriptList,
+    pub feature_list: FeatureList,
+    pub feature_variation_list: Option<FeatureVariations>,
+    pub loaded_subsitutions: HashMap<&'static [u8; 4], Substitution>,
 }
 impl<'a> Gsub<'a> {
     pub fn parse(data: &'a [u8], tables: &HashMap<[u8; 4], TableRecord>) -> Result<Self, Error> {
@@ -96,8 +96,5 @@ impl<'a> Gsub<'a> {
             lookup_list,
             loaded_subsitutions: HashMap::new(),
         })
-    }
-    pub fn parse_script(tag: &[u8; 4]) -> Substitution {
-        Substitution::ChainedContextual(ChainedContextualSubstitution {})
     }
 }

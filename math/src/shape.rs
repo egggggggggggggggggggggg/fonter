@@ -4,7 +4,6 @@ use crate::{
     contour::Contour,
     lalg::Vec2,
 };
-//0.5 * (sqrt5 - 1)
 const DECONVERGE_OVERSHOOT: f64 = 1.11111111111111111;
 #[derive(Clone, Debug)]
 pub struct Shape {

@@ -1,8 +1,10 @@
 [package]
-name = "core"
+name = "fonter"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-atlas_gen = {path = "../atlas_gen"}
+atlas_gen = { path = "../atlas_gen"}
+criterion = "0.8.2"
+image = "0.25.10"
 parser = { path = "../parser"}

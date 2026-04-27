@@ -1,4 +1,30 @@
-mod script {
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Copy)]
+pub struct Tag {
+    inner: [u8; 4],
+}
+impl Tag {
+    pub const fn from_bytes(bytes: [u8; 4]) -> Self {
+        Tag { inner: bytes }
+    }
+}
+impl From<[u8; 4]> for Tag {
+    fn from(inner: [u8; 4]) -> Self {
+        Tag { inner }
+    }
+}
+impl From<u32> for Tag {
+    fn from(value: u32) -> Self {
+        Self {
+            inner: value.to_be_bytes(),
+        }
+    }
+}
+impl AsRef<[u8; 4]> for Tag {
+    fn as_ref(&self) -> &[u8; 4] {
+        &self.inner
+    }
+}
+pub mod script {
     pub const ADLAM: &[u8; 4] = b"adlm";
     pub const AHOM: &[u8; 4] = b"ahom";
     pub const ANATOLIAN_HIEROGLYPHS: &[u8; 4] = b"hluw";

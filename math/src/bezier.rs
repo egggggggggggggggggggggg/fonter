@@ -81,8 +81,6 @@ impl From<u8> for EdgeColor {
     }
 }
 #[derive(Clone, Copy, Default, Debug)]
-///AABB - Think it does work for stuff besides bezier curves
-///
 pub struct Bounds {
     pub x_min: f64,
     pub x_max: f64,
@@ -129,11 +127,11 @@ impl BezierTypes {
             BezierTypes::Cubic(_) => 3,
         }
     }
-    pub fn control_points(&self) -> Vec<Vec2> {
+    pub fn control_points(&self) -> &[Vec2] {
         match self {
-            BezierTypes::Linear(l) => l.p.to_vec(),
-            BezierTypes::Quadratic(q) => q.p.to_vec(),
-            BezierTypes::Cubic(c) => c.p.to_vec(),
+            BezierTypes::Linear(l) => &l.p,
+            BezierTypes::Quadratic(q) => &q.p,
+            BezierTypes::Cubic(c) => &c.p,
         }
     }
 }
@@ -442,7 +440,6 @@ impl Bezier for QuadraticBezier {
             }
         }
         for i in 0..solutions.len() {
-            //disqualify solutions out of the 0.0 - 1.0 range
             if solutions[i] > 0.0 && solutions[i] < 1.0 {
                 let qe = qa + ab * (2.0 * solutions[i]) + br * (solutions[i] * solutions[i]);
                 let distance = qe.length();
@@ -767,11 +764,11 @@ impl Bezier for CubicBezier {
         [part0, part1, part2]
     }
     fn point(&self, param: f64) -> Vec2 {
-        let p12 = mix(self.p[1], self.p[2], param);
-        return mix(
-            mix(mix(self.p[0], self.p[1], param), p12, param),
-            mix(p12, mix(self.p[2], self.p[3], param), param),
-            param,
-        );
+        let a = mix(self.p[0], self.p[1], param);
+        let b = mix(self.p[1], self.p[2], param);
+        let c = mix(self.p[2], self.p[3], param);
+        let d = mix(a, b, param);
+        let e = mix(b, c, param);
+        mix(d, e, param)
     }
 }

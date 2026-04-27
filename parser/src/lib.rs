@@ -1,7 +1,9 @@
+pub mod aat;
 mod cursor;
 pub mod error;
 mod table;
 mod tags;
+pub use aat::*;
 pub mod ttf_parse;
 pub use ttf_parse::*;
 /*

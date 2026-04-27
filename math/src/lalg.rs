@@ -7,46 +7,49 @@ pub struct Vec2 {
     pub y: f64,
 }
 impl Vec2 {
-    #[inline(always)]
+    #[inline]
     pub fn magnitude(&self) -> f64 {
-        (self.x.powi(2) + self.y.powi(2)).sqrt()
+        self.length()
     }
-    #[inline(always)]
+    #[inline]
     pub fn dot(&self, rhs: Self) -> f64 {
         self.x * rhs.x + self.y * rhs.y
     }
-    #[inline(always)]
+    #[inline]
     pub fn cross(&self, rhs: Self) -> f64 {
         self.x * rhs.y - self.y * rhs.x
     }
-    #[inline(always)]
+    #[inline]
     pub fn normalize(&self) -> Self {
         self.normalize_allow_zero(false)
     }
-    #[inline(always)]
+    #[inline]
     pub fn normalize_allow_zero(&self, allow_zero: bool) -> Self {
-        let len = self.length();
+        let sq = self.x * self.x + self.y * self.y;
 
-        if len != 0.0 {
-            Self {
-                x: self.x / len,
-                y: self.y / len,
-            }
-        } else if allow_zero {
+        if sq > 0.0 {
+            let inv = 1.0 / sq.sqrt();
+            return Self {
+                x: self.x * inv,
+                y: self.y * inv,
+            };
+        }
+
+        if allow_zero {
             Self { x: 0.0, y: 0.0 }
         } else {
             Self { x: 0.0, y: 1.0 }
         }
     }
-    #[inline(always)]
+    #[inline]
     pub fn length(&self) -> f64 {
         (self.x * self.x + self.y * self.y).sqrt()
     }
-    #[inline(always)]
+    #[inline]
     pub fn squared_length(&self) -> f64 {
         self.x * self.x + self.y * self.y
     }
-    #[inline(always)]
+    #[inline]
     pub fn orthogonal(&self, polarity: bool) -> Vec2 {
         if polarity {
             Vec2 {
@@ -60,11 +63,10 @@ impl Vec2 {
             }
         }
     }
-    #[inline(always)]
+    #[inline]
     pub fn orthonormal(&self, polarity: bool, allow_zero: bool) -> Vec2 {
         let len = self.length();
-        let sign = if polarity { 1.0 } else { -1.0 };
-
+        let sign = 2.0 * (polarity as u8 as f64) - 1.0;
         if len != 0.0 {
             Vec2 {
                 x: -sign * self.y / len,
@@ -77,7 +79,7 @@ impl Vec2 {
             }
         }
     }
-    #[inline(always)]
+    #[inline]
     pub fn is_zero(&self) -> bool {
         self.x == 0.0 && self.y == 0.0
     }
@@ -144,15 +146,6 @@ impl Mul<Vec2> for f64 {
     }
     type Output = Vec2;
 }
-impl From<(f64, f64)> for Vec2 {
-    fn from(value: (f64, f64)) -> Self {
-        Self {
-            x: value.0,
-            y: value.1,
-        }
-    }
-}
-impl Eq for Vec2 {}
 impl PartialEq for Vec2 {
     fn eq(&self, other: &Self) -> bool {
         self.x == other.x && self.y == other.y
@@ -178,14 +171,14 @@ impl Transform {
             dy: 0.0,
         }
     }
-    #[inline(always)]
+    #[inline]
     pub fn apply(&self, p: Vec2) -> Vec2 {
         Vec2 {
             x: self.a * p.x + self.b * p.y + self.dx,
             y: self.c * p.x + self.d * p.y + self.dy,
         }
     }
-    #[inline(always)]
+    #[inline]
     pub fn combine(self, other: Transform) -> Transform {
         Transform {
             a: self.a * other.a + self.b * other.c,
@@ -229,9 +222,16 @@ impl BezierCurve {
     pub fn evaluate_bezier(&self, t: f64) -> Vec2 {
         let u = 1.0 - t;
         match self {
-            BezierCurve::Cubic(_a, _b, _c, _d) => Vec2 { x: 0.0, y: 0.0 },
+            BezierCurve::Cubic(p0, p1, p2, p3) => {
+                let a = -*p0 + *p1 * 3.0 - *p2 * 3.0 + *p3;
+                let b = *p0 * 3.0 - *p1 * 6.0 + *p2 * 3.0;
+                let c = (*p1 - *p0) * 3.0;
+                *p0 + c * t + b * t * t + a * t * t * t
+            }
             BezierCurve::Quadratic(p0, p1, p2) => {
-                *p0 * (u * u) + *p1 * (2.0 * u * t) + *p2 * (t * t)
+                let a = *p0 - *p1 * 2.0 + *p2;
+                let b = (*p1 - *p0) * 2.0;
+                *p0 + b * t + a * t * t
             }
             BezierCurve::Linear(p0, p1) => (*p0 * u) + (*p1 * t),
         }
