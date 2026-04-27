@@ -3,7 +3,7 @@ pub mod coverage;
 pub mod features;
 pub mod lang_sys;
 pub mod lookup;
+//Parses on demand.
 pub mod script;
 pub mod sequence;
 pub mod variation;
-use script::*;

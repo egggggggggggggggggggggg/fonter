@@ -662,6 +662,9 @@ dependencies = [
 [[package]]
 name = "msdfgen"
 version = "0.1.0"
+dependencies = [
+ "math",
+]
 
 [[package]]
 name = "new_debug_unreachable"

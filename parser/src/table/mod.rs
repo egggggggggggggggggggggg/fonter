@@ -1,4 +1,5 @@
 //Required Tables
+pub mod cff;
 pub mod cmap;
 pub mod common;
 pub mod glyf;

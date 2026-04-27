@@ -3,10 +3,11 @@ use std::net::UdpSocket;
 use crate::{common::coverage::Coverage, cursor::Cursor, error::Error};
 #[derive(Debug, Clone)]
 pub struct MultipleSubsitution {
-    format: u16,
-    coverage: Coverage,
-    sequences: Vec<Sequence>,
+    pub format: u16,
+    pub coverage: Coverage,
+    pub sequences: Vec<Sequence>,
 }
+
 impl MultipleSubsitution {
     pub fn parse(cursor: &mut Cursor, base: usize) -> Result<Self, Error> {
         let format = cursor.read_u16()?;

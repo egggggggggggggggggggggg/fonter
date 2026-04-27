@@ -11,3 +11,4 @@ bitflags = "2.10.0"
 
 [profile.release]
 debug = true
+force-frame-pointers = true

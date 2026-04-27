@@ -5,7 +5,10 @@ mod table;
 mod tags;
 pub use aat::*;
 pub mod ttf_parse;
+use math::shape::Shape;
 pub use ttf_parse::*;
+
+use crate::{error::Error, table::gsub::Gsub};
 /*
 * TO DO:
 - Implement lazy parsing
@@ -19,3 +22,34 @@ pub use ttf_parse::*;
 - Outputting pos + etc,
 - Rest of the tables like GPOS, ...,
 */
+
+pub trait Font: Sized {
+    fn glyph_index(&self, codepoint: u32) -> u16;
+    fn gsub(&self) -> Option<Gsub<'static>>;
+    fn gpos(&self) -> Option<()>;
+    fn metrics(&self, glyph_id: u16) -> f32;
+}
+///Static dispatching fonts or smth, idk.
+pub enum FontTypes {
+    Ttf(TtfFont),
+    Otf,
+    Woff,
+}
+impl Font for FontTypes {
+    fn glyph_index(&self, codepoint: u32) -> u16 {
+        todo!()
+    }
+    fn gsub(&self) -> Option<Gsub<'static>> {
+        todo!()
+    }
+    fn gpos(&self) -> Option<()> {
+        todo!()
+    }
+    fn metrics(&self, glyph_id: u16) -> f32 {
+        todo!()
+    }
+}
+///The data lasts as long as the file is alive.
+pub trait Table<'a>: Sized {
+    fn parse(data: &'a [u8]) -> Result<Self, Error>;
+}

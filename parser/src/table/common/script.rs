@@ -5,7 +5,6 @@ use crate::{
     cursor::Cursor,
     error::Error,
 };
-///SriptList parses on demand.
 pub struct ScriptList {
     script_records: HashMap<[u8; 4], ScriptRecords>,
     ///When the Script is parsed, its cached into a hashMap to avoid reparsing.

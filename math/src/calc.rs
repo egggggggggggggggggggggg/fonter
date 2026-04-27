@@ -167,7 +167,7 @@ pub fn solve_cubic_normed(a: f64, b: f64, c: f64) -> Vec<f64> {
     let r = (2.0 * a * a2 - 9.0 * a * b + 27.0 * c) / 54.0;
     let r2 = r * r;
     let q3 = q * q * q;
-    a *= 1.0 / 3.0;
+    a /= 3.0;
     if r2 < q3 {
         let t = (r / q3.sqrt()).clamp(-1.0, 1.0).acos();
         q = -2.0 * q.sqrt();
@@ -198,8 +198,8 @@ pub fn solve_cubic(a: f64, b: f64, c: f64, d: f64) -> (Vec<f64>, bool) {
 }
 
 pub fn solve_quadratic(a: f64, b: f64, c: f64) -> (Vec<f64>, bool) {
-    //No with_capacity() as the amount of solution varies and is important info
-    let mut solutions = Vec::new();
+    //Overallocating is fine here.
+    let mut solutions = Vec::with_capacity(3);
     //linear
     if a == 0.0 || b.abs() > 1e12 * a.abs() {
         if b == 0.0 {

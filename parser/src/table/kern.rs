@@ -44,6 +44,7 @@ impl Kern {
             Self::parse_ms(cursor)
         }
     }
+    fn search() {}
     fn parse_ms(mut cursor: Cursor) -> Result<Self, Error> {
         let version = cursor.read_u16()?; // usually 0
         let n_tables = cursor.read_u16()?;
@@ -70,6 +71,7 @@ impl Kern {
                     }
                     subtables.push(MsSubtable { coverage, pairs });
                 }
+                2 => {}
                 _ => {}
             }
             cursor.seek(subtable_start + (length as usize - 6))?;

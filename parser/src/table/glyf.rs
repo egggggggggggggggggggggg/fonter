@@ -91,6 +91,9 @@ pub struct Component {
     pub reference: Arc<Glyph>,
     pub transform_data: Transform,
 }
+///Behavior of this is that it eagerly parses. Other libraries like ttf_parser dont do that and
+///delay it til the user requests it hence why the performance between my glyf_parser for a single
+///glyf is so much better.
 #[derive(Debug, Clone)]
 pub struct Glyf {
     offsets: Vec<u32>,
