@@ -13,6 +13,7 @@ use crate::{
         ligature::LigatureSubstitution, multiple::MultipleSubsitution,
         reverse::ReverseSubstitution, single::SingleSubsitution,
     },
+    tags::Tag,
 };
 
 pub mod alternate;
@@ -96,5 +97,37 @@ impl<'a> Gsub<'a> {
             lookup_list,
             loaded_subsitutions: HashMap::new(),
         })
+    }
+    pub fn get_substitution(
+        &mut self,
+        script_tag: Tag,
+        lang_tag: Option<Tag>,
+        feature: Tag,
+    ) -> Result<Substitution, Error> {
+        let mut cursor = Cursor::set(self.segment, 0);
+        if !script_tag.is_valid_script() {
+            return Err(Error::InvalidTag(script_tag));
+        }
+        let script = self.script_list.get_or_parse(&mut cursor, &script_tag)?;
+        let lang_sys = match lang_tag {
+            Some(tag) => {
+                if let Some(lang) = script.lang_sys.get(&tag) {
+                    lang
+                } else {
+                    return Err(Error::InvalidTag(tag));
+                }
+            }
+            None => {
+                if let Some(dflt) = &script.default_lang_sys {
+                    dflt
+                } else {
+                    return Err(Error::Unknown);
+                }
+            }
+        };
+        let feature = lang_sys.feature_indices
+        match feature {
+            _ => return Err(Error::InvalidTag(feature)),
+        }
     }
 }

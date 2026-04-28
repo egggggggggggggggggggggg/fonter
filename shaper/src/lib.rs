@@ -27,6 +27,8 @@ pub struct GlyphBuffer {
 }
 ///Holds config opts, like language type, etc.
 pub struct Shaper<'a> {
+    script: &'static str,
+
     font: &'a FontTypes,
 }
 impl<'a> Shaper<'a> {

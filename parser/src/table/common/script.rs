@@ -1,54 +1,64 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, hash_map::Entry};
 
 use crate::{
     common::lang_sys::{LangSys, LangSysRecord},
     cursor::Cursor,
     error::Error,
+    tags::{self, Tag},
 };
+
 pub struct ScriptList {
-    script_records: HashMap<[u8; 4], ScriptRecords>,
-    ///When the Script is parsed, its cached into a hashMap to avoid reparsing.
-    parsed_scripts: HashMap<[u8; 4], Script>,
-    ///Where the ScriptList starts. This allows us to lazily parse by allowing us to resume our
-    ///previous position when needed.  
+    script_records: HashMap<Tag, ScriptRecords>,
+    parsed_scripts: HashMap<Tag, Script>,
     base: usize,
 }
+
 impl ScriptList {
-    ///Prior to calling this, cursor must be alligned to the offset specified for the table.
+    /// Prior to calling this, cursor must be aligned to the offset specified for the table.
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
         let base = cursor.position();
         let script_count = cursor.read_u16()?;
         let mut script_records = HashMap::with_capacity(script_count as usize);
         for _ in 0..script_count {
             let record = ScriptRecords::parse(cursor)?;
-            script_records.insert(record.script_tag, record);
+            script_records.insert(tags::Tag::from_bytes(record.script_tag), record);
         }
         Ok(Self {
-            parsed_scripts: HashMap::new(),
             script_records,
+            parsed_scripts: HashMap::new(),
             base,
         })
     }
+
+    /// Parse every script immediately.
     pub fn parse_all(&mut self, cursor: &mut Cursor) -> Result<(), Error> {
-        let kvpair: Vec<([u8; 4], ScriptRecords)> = self.script_records.drain().collect();
-        for (tag, record) in kvpair {
+        let kv: Vec<(tags::Tag, ScriptRecords)> = self.script_records.drain().collect();
+        for (tag, record) in kv {
             cursor.seek(self.base + record.script_offset as usize)?;
-            let res = Script::parse(cursor)?;
-            self.parsed_scripts.insert(tag, res);
+            let script = Script::parse(cursor)?;
+            self.parsed_scripts.insert(tag, script);
         }
         Ok(())
     }
-    ///Parses the specified tag.
-    pub fn parse_script(&mut self, cursor: &mut Cursor, tag: &[u8; 4]) -> Result<(), Error> {
-        let record = self.script_records.remove(tag).ok_or(Error::Unknown)?;
-        cursor.seek(self.base + record.script_offset as usize)?;
-        let res = Script::parse(cursor)?;
-        self.parsed_scripts.insert(*tag, res.clone());
-        Ok(())
+
+    /// Ensure the script for `tag` is parsed and return a reference to it.
+    /// This parses the script lazily if necessary, so callers don't need to call a separate parse method.
+
+    pub fn get_or_parse(&mut self, cursor: &mut Cursor, tag: &Tag) -> Result<&Script, Error> {
+        match self.parsed_scripts.entry(*tag) {
+            Entry::Occupied(o) => return Ok(o.into_mut()),
+            Entry::Vacant(v) => {
+                // Need to remove the ScriptRecords from script_records first.
+                let record = self.script_records.remove(tag).ok_or(Error::Unknown)?;
+                cursor.seek(self.base + record.script_offset as usize)?;
+                let script = Script::parse(cursor)?;
+                // Insert and return a reference to the inserted value.
+                return Ok(v.insert(script));
+            }
+        }
     }
-    ///Returns a script if it has been parsed. If not call parse_script and then get_script.
-    pub fn get_script(&mut self, tag: &[u8; 4]) -> Result<&Script, Error> {
-        self.parsed_scripts.get(tag).ok_or(Error::Unknown)
+    pub fn get_parsed(&self, tag: &Tag) -> Option<&Script> {
+        self.parsed_scripts.get(tag)
     }
 }
 
@@ -69,7 +79,7 @@ impl ScriptRecords {
 #[derive(Clone, Debug)]
 pub struct Script {
     pub default_lang_sys: Option<LangSys>,
-    pub lang_sys: HashMap<[u8; 4], LangSys>,
+    pub lang_sys: HashMap<Tag, LangSys>,
 }
 
 impl Script {
@@ -80,7 +90,10 @@ impl Script {
         let mut lang_sys = HashMap::with_capacity(lang_sys_count as usize);
         for _ in 0..lang_sys_count {
             let lang_sys_record = LangSysRecord::parse(cursor, base)?;
-            lang_sys.insert(lang_sys_record.lang_sys_tag, lang_sys_record.lang_sys);
+            lang_sys.insert(
+                Tag::from(lang_sys_record.lang_sys_tag),
+                lang_sys_record.lang_sys,
+            );
         }
         let default_lang_sys = if default_lang_sys_offset == 0 {
             None

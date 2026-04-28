@@ -18,9 +18,9 @@ impl LangSysRecord {
 }
 #[derive(Debug, Clone)]
 pub struct LangSys {
-    lookup_order_offset: u16,
-    required_feature_index: u16,
-    feature_indices: Vec<u16>,
+    pub lookup_order_offset: u16,
+    pub required_feature_index: u16,
+    pub feature_indices: Vec<u16>,
 }
 impl LangSys {
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {

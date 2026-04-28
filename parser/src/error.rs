@@ -1,3 +1,5 @@
+use crate::tags::Tag;
+
 #[derive(Debug)]
 pub enum Error {
     Io(std::io::Error),
@@ -6,6 +8,7 @@ pub enum Error {
     InvalidFormat(&'static str),
     ReadError(ReadError),
     Unknown,
+    InvalidTag(Tag),
 }
 #[derive(Debug)]
 pub enum ParseError {
