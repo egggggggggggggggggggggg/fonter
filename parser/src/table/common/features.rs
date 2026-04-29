@@ -3,15 +3,15 @@ use std::collections::HashMap;
 use crate::{cursor::Cursor, error::Error, tags::Tag};
 #[derive(Debug, Clone)]
 pub struct FeatureList {
-    pub features: HashMap<Tag, Feature>,
+    pub features: Vec<Feature>,
 }
 impl FeatureList {
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
         let base = cursor.position();
         let feature_count = cursor.read_u16()?;
-        let mut features = HashMap::with_capacity(feature_count as usize);
+        let mut features = Vec::with_capacity(feature_count as usize);
         for _ in 0..feature_count {
-            let feature_tag = Tag::from(cursor.read_u32()?);
+            let tag = Tag::from(cursor.read_u32()?);
             let feature_offset = cursor.read_u16()?;
             let saved = cursor.position();
             let feature_start = feature_offset as usize + base;
@@ -28,13 +28,11 @@ impl FeatureList {
                 cursor.seek(feature_start + feature_params_offset as usize)?;
                 Some(0)
             };
-            features.insert(
-                feature_tag,
-                Feature {
-                    feature_params,
-                    lookup_list_indices,
-                },
-            );
+            features.push(Feature {
+                tag,
+                feature_params,
+                lookup_list_indices,
+            });
             cursor.seek(saved)?;
         }
         Ok(Self { features })
@@ -45,4 +43,5 @@ pub struct Feature {
     ///Placeholder for now. Unsure how to implement this.
     pub feature_params: Option<i32>,
     pub lookup_list_indices: Vec<u16>,
+    pub tag: Tag,
 }

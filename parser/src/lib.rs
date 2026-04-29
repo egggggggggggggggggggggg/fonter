@@ -2,7 +2,7 @@ pub mod aat;
 mod cursor;
 pub mod error;
 mod table;
-mod tags;
+pub mod tags;
 pub use aat::*;
 pub mod ttf_parse;
 use math::shape::Shape;

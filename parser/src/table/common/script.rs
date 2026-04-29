@@ -17,11 +17,14 @@ impl ScriptList {
     /// Prior to calling this, cursor must be aligned to the offset specified for the table.
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
         let base = cursor.position();
+        println!("Script List base was : {}", base);
         let script_count = cursor.read_u16()?;
         let mut script_records = HashMap::with_capacity(script_count as usize);
         for _ in 0..script_count {
             let record = ScriptRecords::parse(cursor)?;
-            script_records.insert(tags::Tag::from_bytes(record.script_tag), record);
+            let tag = tags::Tag::from(record.script_tag);
+            println!("Parsed tags: {}", tag);
+            script_records.insert(tag, record);
         }
         Ok(Self {
             script_records,
@@ -49,8 +52,16 @@ impl ScriptList {
             Entry::Occupied(o) => return Ok(o.into_mut()),
             Entry::Vacant(v) => {
                 // Need to remove the ScriptRecords from script_records first.
-                let record = self.script_records.remove(tag).ok_or(Error::Unknown)?;
+                let record = self.script_records.remove(tag).ok_or(Error::AnyMessage(
+                    "Record does not exist in the script_records",
+                ))?;
+                println!(
+                    "attempting to seek to here: {} when data was only: {} ",
+                    self.base + record.script_offset as usize,
+                    cursor.size()
+                );
                 cursor.seek(self.base + record.script_offset as usize)?;
+                println!("Attempting to parse a script");
                 let script = Script::parse(cursor)?;
                 // Insert and return a reference to the inserted value.
                 return Ok(v.insert(script));
@@ -98,8 +109,9 @@ impl Script {
         let default_lang_sys = if default_lang_sys_offset == 0 {
             None
         } else {
-            cursor.seek(default_lang_sys_offset as usize)?;
-            Some(LangSys::parse(cursor)?)
+            cursor.seek(base + default_lang_sys_offset as usize)?;
+            let result = Some(LangSys::parse(cursor)?);
+            result
         };
         Ok(Self {
             default_lang_sys,

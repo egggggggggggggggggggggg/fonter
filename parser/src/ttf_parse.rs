@@ -100,7 +100,7 @@ impl TtfFont {
             post,
         })
     }
-    pub fn parse_gsub(&mut self) -> Result<Gsub, Error> {
+    pub fn parse_gsub<'a>(&'a mut self) -> Result<Gsub<'a>, Error> {
         Gsub::parse(&self.data, &self.tables)
     }
     pub fn parse_gid(&mut self, gid: GlyphId) -> Result<Option<&Arc<Glyph>>, Error> {

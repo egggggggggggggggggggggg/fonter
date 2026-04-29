@@ -1,5 +1,6 @@
 use std::{
     borrow::Borrow,
+    fmt::Display,
     ops::{Deref, DerefMut},
 };
 
@@ -22,6 +23,24 @@ impl From<u32> for Tag {
     fn from(value: u32) -> Self {
         Self {
             inner: value.to_be_bytes(),
+        }
+    }
+}
+use std::fmt;
+impl fmt::Display for Tag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match std::str::from_utf8(&self.inner) {
+            Ok(s) => write!(f, "{s}"),
+            Err(_) => {
+                for &b in &self.inner {
+                    if b.is_ascii_graphic() || b == b' ' {
+                        write!(f, "{}", b as char)?;
+                    } else {
+                        write!(f, "\\x{:02X}", b)?;
+                    }
+                }
+                Ok(())
+            }
         }
     }
 }
@@ -287,7 +306,7 @@ pub mod script {
     pub const ZANABAZAR_SQUARE: &[u8; 4] = b"zanb";
 }
 
-mod language {
+pub mod language {
     // Common OpenType language system tags (4 bytes)
     pub const DEFAULT: &[u8; 4] = b"dflt";
     pub const ENGLISH_US: &[u8; 4] = b"ENG ";
@@ -327,13 +346,6 @@ mod language {
     pub const TURKISH: &[u8; 4] = b"tr  ";
     pub const UKRAINIAN: &[u8; 4] = b"uk  ";
     // Add more language tags as needed
-}
-macro_rules! script_set {
-    ($($name:ident),* $(,)?) => {
-        pub const VALID_SCRIPTS: &[[u8; 4]] = &[
-            $(*script::$name),*
-        ];
-    };
 }
 mod feature {
     // Common OpenType feature tags (4 bytes)

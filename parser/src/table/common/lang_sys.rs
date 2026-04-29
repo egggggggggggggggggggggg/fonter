@@ -6,10 +6,12 @@ pub struct LangSysRecord {
 impl LangSysRecord {
     ///Base is the offset of the ScriptTable.
     pub fn parse(cursor: &mut Cursor, base: usize) -> Result<Self, Error> {
+        let saved = cursor.position();
         let lang_sys_tag = cursor.read_u32()?.to_be_bytes();
         let lang_sys_offset = cursor.read_u16()?;
         cursor.seek(base + lang_sys_offset as usize)?;
         let lang_sys = LangSys::parse(cursor)?;
+        cursor.seek(saved)?;
         Ok(Self {
             lang_sys_tag,
             lang_sys,

@@ -53,6 +53,9 @@ impl Substitution {
         })
     }
 }
+#[derive(Hash)]
+pub struct FeatureSetKey {}
+
 pub struct Gsub<'a> {
     segment: &'a [u8],
     pub lookup_list: LookupList,
@@ -61,12 +64,12 @@ pub struct Gsub<'a> {
     pub feature_variation_list: Option<FeatureVariations>,
     pub loaded_subsitutions: HashMap<&'static [u8; 4], Substitution>,
 }
+///Lots of dumb workaround stuff, to flesh out the general idea, will fix later.
 impl<'a> Gsub<'a> {
     pub fn parse(data: &'a [u8], tables: &HashMap<[u8; 4], TableRecord>) -> Result<Self, Error> {
         let rec = tables.get(b"GSUB").ok_or(Error::MissingTable("GSUB"))?;
-        let segment =
-            &data[rec.table_offset as usize..rec.table_offset as usize + rec.length as usize];
         let mut cursor = Cursor::set(data, rec.table_offset);
+        let base = rec.table_offset as usize;
         let major = cursor.read_u16()?;
         let minor = cursor.read_u16()?;
         let script_list_offset = cursor.read_u16()?;
@@ -77,12 +80,12 @@ impl<'a> Gsub<'a> {
         } else {
             None
         };
-        cursor.seek(lookup_list_offset as usize)?;
-        let lookup_list = LookupList::parse(&mut cursor)?;
-        cursor.seek(feature_list_offset as usize)?;
-        let feature_list = FeatureList::parse(&mut cursor)?;
-        cursor.seek(script_list_offset as usize)?;
+        cursor.seek(base + script_list_offset as usize)?;
         let script_list = ScriptList::parse(&mut cursor)?;
+        cursor.seek(base + feature_list_offset as usize)?;
+        let feature_list = FeatureList::parse(&mut cursor)?;
+        cursor.seek(base + lookup_list_offset as usize)?;
+        let lookup_list = LookupList::parse(&mut cursor)?;
         let feature_variation_list = if let Some(offset) = feature_variation_offset {
             cursor.seek(offset as usize)?;
             Some(FeatureVariations::parse(&mut cursor)?)
@@ -90,7 +93,7 @@ impl<'a> Gsub<'a> {
             None
         };
         Ok(Self {
-            segment,
+            segment: data,
             feature_variation_list,
             script_list,
             feature_list,
@@ -103,11 +106,8 @@ impl<'a> Gsub<'a> {
         script_tag: Tag,
         lang_tag: Option<Tag>,
         feature: Tag,
-    ) -> Result<Substitution, Error> {
+    ) -> Result<(), Error> {
         let mut cursor = Cursor::set(self.segment, 0);
-        if !script_tag.is_valid_script() {
-            return Err(Error::InvalidTag(script_tag));
-        }
         let script = self.script_list.get_or_parse(&mut cursor, &script_tag)?;
         let lang_sys = match lang_tag {
             Some(tag) => {
@@ -121,13 +121,11 @@ impl<'a> Gsub<'a> {
                 if let Some(dflt) = &script.default_lang_sys {
                     dflt
                 } else {
-                    return Err(Error::Unknown);
+                    return Err(Error::InvalidFormat("This failed"));
                 }
             }
         };
-        let feature = lang_sys.feature_indices
-        match feature {
-            _ => return Err(Error::InvalidTag(feature)),
-        }
+        println!("lang_sys: {:?}", lang_sys);
+        Ok(())
     }
 }

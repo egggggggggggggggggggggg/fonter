@@ -9,6 +9,7 @@ pub enum Error {
     ReadError(ReadError),
     Unknown,
     InvalidTag(Tag),
+    AnyMessage(&'static str),
 }
 #[derive(Debug)]
 pub enum ParseError {

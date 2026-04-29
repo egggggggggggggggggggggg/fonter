@@ -78,4 +78,8 @@ impl<'a> Cursor<'a> {
     pub fn position(&self) -> usize {
         self.pos
     }
+    #[inline]
+    pub fn size(&self) -> usize {
+        self.data.len()
+    }
 }
