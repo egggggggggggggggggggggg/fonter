@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     TableRecord,
     common::{
@@ -7,55 +5,11 @@ use crate::{
     },
     cursor::Cursor,
     error::Error,
-    gsub::{
-        alternate::AlternateSubstitution, chained::ChainedContextualSubstitution,
-        contextual::ContextualSubstitution, extension::ExtensionSubstitution,
-        ligature::LigatureSubstitution, multiple::MultipleSubsitution,
-        reverse::ReverseSubstitution, single::SingleSubsitution,
-    },
+    gsub::sub::Substitution,
     tags::Tag,
 };
-
-pub mod alternate;
-pub mod chained;
-pub mod contextual;
-pub mod extension;
-pub mod ligature;
-pub mod multiple;
-pub mod reverse;
-pub mod single;
-#[derive(Debug, Clone)]
-pub enum Substitution {
-    Single(SingleSubsitution),
-    Multiple(MultipleSubsitution),
-    Alternate(AlternateSubstitution),
-    Ligature(LigatureSubstitution),
-    Contextual(ContextualSubstitution),
-    ChainedContextual(ChainedContextualSubstitution),
-    Extension(ExtensionSubstitution),
-    Reverse(ReverseSubstitution),
-}
-impl Substitution {
-    pub fn parse(cursor: &mut Cursor, lookup_type: u16) -> Result<Self, Error> {
-        let base = cursor.position();
-        Ok(match lookup_type {
-            1 => Self::Single(SingleSubsitution::parse(cursor, base)?),
-            2 => Self::Multiple(MultipleSubsitution::parse(cursor, base)?),
-            3 => Self::Alternate(AlternateSubstitution::parse(cursor, base)?),
-            4 => Self::Ligature(LigatureSubstitution::parse(cursor)?),
-            5 => Self::Contextual(ContextualSubstitution::parse(cursor)?),
-            6 => Self::ChainedContextual(ChainedContextualSubstitution::parse(cursor)?),
-            7 => Self::Extension(ExtensionSubstitution::parse(cursor)?),
-            8 => Self::Reverse(ReverseSubstitution::parse(cursor)?),
-            _ => {
-                return Err(Error::Unknown);
-            }
-        })
-    }
-}
-#[derive(Hash)]
-pub struct FeatureSetKey {}
-
+use std::collections::HashMap;
+pub mod sub;
 pub struct Gsub<'a> {
     segment: &'a [u8],
     pub lookup_list: LookupList,
@@ -105,7 +59,7 @@ impl<'a> Gsub<'a> {
         &mut self,
         script_tag: Tag,
         lang_tag: Option<Tag>,
-        feature: Tag,
+        feature_tag: Tag,
     ) -> Result<(), Error> {
         let mut cursor = Cursor::set(self.segment, 0);
         let script = self.script_list.get_or_parse(&mut cursor, &script_tag)?;
@@ -125,6 +79,32 @@ impl<'a> Gsub<'a> {
                 }
             }
         };
+        let mut requested_feature = None;
+        for index in &lang_sys.feature_indices {
+            let feature = &self.feature_list.features[*index as usize];
+            if feature.tag == feature_tag {
+                requested_feature = Some(feature);
+                break;
+            }
+        }
+        if let Some(found_feature) = requested_feature {
+            for index in &found_feature.lookup_list_indices {
+                let lookup = &self.lookup_list.lookups[*index as usize];
+                for subtable_index in &lookup.sub_table_offsets {
+                    let new_index = *subtable_index as usize + lookup.offset;
+                    println!(
+                        "Attempting to seek here: {} with this type: {}",
+                        new_index, lookup.lookup_type
+                    );
+                    cursor.seek(*subtable_index as usize + lookup.offset)?;
+                    let sub = Substitution::parse(&mut cursor, lookup.lookup_type)?;
+                    println!("Substitution: {:?}", sub);
+                }
+            }
+        } else {
+            return Err(Error::AnyMessage("Failed to get the requested feature."));
+        }
+
         println!("lang_sys: {:?}", lang_sys);
         Ok(())
     }

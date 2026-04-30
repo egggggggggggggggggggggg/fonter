@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 use crate::{cursor::Cursor, error::Error, tags::Tag};
 #[derive(Debug, Clone)]
@@ -44,4 +44,13 @@ pub struct Feature {
     pub feature_params: Option<i32>,
     pub lookup_list_indices: Vec<u16>,
     pub tag: Tag,
+}
+impl Display for Feature {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "lookup_indices: {:?} tag: {}",
+            self.lookup_list_indices, self.tag
+        )
+    }
 }

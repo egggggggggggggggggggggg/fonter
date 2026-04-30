@@ -1,14 +1,23 @@
+use std::fmt::Display;
+
 use crate::{cursor::Cursor, error::Error};
 #[derive(Debug, Clone)]
 pub enum Coverage {
-    Format1 {
-        glyph_count: u16,
-        glyph_array: Vec<u16>,
-    },
-    Format2 {
-        range_count: u16,
-        range_records: Vec<RangeRecord>,
-    },
+    Format1 { glyph_array: Vec<u16> },
+    Format2 { range_records: Vec<RangeRecord> },
+}
+impl Display for Coverage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Format1 { glyph_array } => {
+                f.debug_list().entries(glyph_array.iter().take(10)).finish()
+            }
+            Self::Format2 { range_records } => f
+                .debug_list()
+                .entries(range_records.iter().take(5))
+                .finish(),
+        }
+    }
 }
 impl Coverage {
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
@@ -20,10 +29,7 @@ impl Coverage {
                 for _ in 0..glyph_count {
                     glyph_array.push(cursor.read_u16()?);
                 }
-                Coverage::Format1 {
-                    glyph_count,
-                    glyph_array,
-                }
+                Coverage::Format1 { glyph_array }
             }
             2 => {
                 let range_count = cursor.read_u16()?;
@@ -31,10 +37,7 @@ impl Coverage {
                 for _ in 0..range_count {
                     range_records.push(RangeRecord::parse(cursor)?);
                 }
-                Coverage::Format2 {
-                    range_count,
-                    range_records,
-                }
+                Coverage::Format2 { range_records }
             }
             _ => {
                 return Err(Error::Unknown);

@@ -24,7 +24,7 @@ impl From<ParseError> for Error {
 #[derive(Debug)]
 pub enum ReadError {
     UnexpectedEof,
-    OutOfBounds,
+    OutOfBounds(usize),
 }
 impl From<ReadError> for Error {
     fn from(value: ReadError) -> Self {

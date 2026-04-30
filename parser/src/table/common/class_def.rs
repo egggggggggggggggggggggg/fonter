@@ -1,5 +1,6 @@
 use crate::{cursor::Cursor, error::Error};
-pub enum ClassDefinition {
+#[derive(Debug, Clone)]
+pub enum ClassDef {
     Format1 {
         start_glyph_id: u16,
         glyph_count: u16,
@@ -10,7 +11,7 @@ pub enum ClassDefinition {
         class_range_records: Vec<ClassRange>,
     },
 }
-impl ClassDefinition {
+impl ClassDef {
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
         let format = cursor.read_u16()?;
         Ok(match format {
@@ -44,6 +45,7 @@ impl ClassDefinition {
         })
     }
 }
+#[derive(Clone, Debug)]
 pub struct ClassRange {
     start_glyph_id: u16,
     end_glyph_id: u16,

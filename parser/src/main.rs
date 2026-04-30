@@ -7,8 +7,9 @@ use parser::{
 
 fn main() -> io::Result<()> {
     let mut font = TtfFont::new("../jet.ttf").unwrap();
+    println!("Tables: {:?}", font.tables);
     let mut gsub = font.parse_gsub().unwrap();
-    gsub.get_substitution(Tag::from(*tags::script::LATIN), None, Tag::from(*b"liga"))
+    gsub.get_substitution(Tag::from(*tags::script::DEFAULT), None, Tag::from(*b"calt"))
         .unwrap();
     Ok(())
 }

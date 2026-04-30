@@ -22,7 +22,7 @@ impl<'a> Cursor<'a> {
         let bytes = self
             .data
             .get(self.pos..self.pos + N)
-            .ok_or(ReadError::OutOfBounds)?;
+            .ok_or(ReadError::OutOfBounds(self.pos))?;
         self.pos += N;
         Ok(bytes.try_into().unwrap())
     }
@@ -69,7 +69,7 @@ impl<'a> Cursor<'a> {
     #[inline(always)]
     pub fn seek(&mut self, pos: usize) -> Result<(), ReadError> {
         if pos > self.data.len() {
-            return Err(ReadError::OutOfBounds);
+            return Err(ReadError::OutOfBounds(pos));
         }
         self.pos = pos;
         Ok(())

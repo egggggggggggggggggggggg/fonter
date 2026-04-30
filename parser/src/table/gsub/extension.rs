@@ -1,9 +1,0 @@
-use crate::{cursor::Cursor, error::Error};
-
-#[derive(Debug, Clone)]
-pub struct ExtensionSubstitution {}
-impl ExtensionSubstitution {
-    pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
-        todo!()
-    }
-}

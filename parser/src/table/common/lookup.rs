@@ -2,6 +2,7 @@ use crate::{cursor::Cursor, error::Error};
 use bitflags::bitflags;
 
 bitflags! {
+    #[derive(Debug, Clone)]
     pub struct LookupFlag: u16 {
         const RIGHT_TO_LEFT =  0x0001;
         const IGNORE_BASE_GLYPHS = 0x0002;
@@ -14,6 +15,7 @@ bitflags! {
 }
 pub struct LookupList {
     pub lookups: Vec<Lookup>,
+    pub offset: usize,
 }
 impl LookupList {
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
@@ -25,11 +27,14 @@ impl LookupList {
         for _ in 0..lookup_count {
             let offset = cursor.read_u16()?;
             let saved_pos = cursor.position();
-            cursor.seek(base + offset as usize);
+            cursor.seek(base + offset as usize)?;
             lookups.push(Lookup::parse(cursor)?);
-            cursor.seek(saved_pos);
+            cursor.seek(saved_pos)?;
         }
-        Ok(Self { lookups })
+        Ok(Self {
+            lookups,
+            offset: base,
+        })
     }
     pub fn total_sub_tables(&self) -> usize {
         let mut counter = 0;
@@ -39,8 +44,9 @@ impl LookupList {
         counter as usize
     }
 }
-
+#[derive(Debug, Clone)]
 pub struct Lookup {
+    pub offset: usize,
     pub lookup_type: u16,
     pub lookup_flag: LookupFlag,
     pub sub_table_count: u16,
@@ -49,6 +55,7 @@ pub struct Lookup {
 }
 impl Lookup {
     pub fn parse(cursor: &mut Cursor) -> Result<Self, Error> {
+        let offset = cursor.position();
         let lookup_type = cursor.read_u16()?;
         let lookup_flag = LookupFlag::from_bits_truncate(cursor.read_u16()?);
         let sub_table_count = cursor.read_u16()?;
@@ -62,6 +69,7 @@ impl Lookup {
             None
         };
         Ok(Self {
+            offset,
             lookup_type,
             lookup_flag,
             sub_table_count,
