@@ -1,5 +1,5 @@
 use crate::{cursor::Cursor, error::Error};
-
+#[derive(Debug, Clone, Copy)]
 pub struct SequenceLookup {
     sequence_index: u16,
     lookup_list_index: u16,
